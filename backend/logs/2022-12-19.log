@@ -1,0 +1,10 @@
+2022/12/19 16:59:45 ---LOGGING-STARTED----------------------------------------------------------------------------------------------------------
+2022/12/19 16:59:45 Config initialised
+2022/12/19 16:59:45 Successfully connected to Postgres
+2022/12/19 23:04:46 ---LOGGING-STARTED----------------------------------------------------------------------------------------------------------
+2022/12/19 23:04:46 Config initialised
+2022/12/19 23:04:49 Db connect error
+dial tcp [::1]:5432: connectex: No connection could be made because the target machine actively refused it.
+2022/12/19 23:06:16 ---LOGGING-STARTED----------------------------------------------------------------------------------------------------------
+2022/12/19 23:06:16 Config initialised
+2022/12/19 23:06:16 Successfully connected to Postgres

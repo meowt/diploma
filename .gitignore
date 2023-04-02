@@ -1,2 +1,3 @@
-/logs/
-/pkg/config/config.yml
+/backend/logs/
+/backend/pkg/config/config.yml
+/backend/web/
