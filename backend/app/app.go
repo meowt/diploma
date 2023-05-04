@@ -45,17 +45,18 @@ func Run() {
 	if err = server.Start(handlers); err != nil {
 		log.Fatal("Server starting error\n" + err.Error())
 	}
-
 }
 
 func SetupModules(DatabaseClient *sqlx.DB, StorageClient *s3.S3) (HandlerModule modules.HandlerModule) {
-	GatewayModule := modules.SetupGateway(DatabaseClient, StorageClient)
+	ErrorModule := modules.SetupError()
+	log.Println("Error module setup correctly")
+	GatewayModule := modules.SetupGateway(DatabaseClient, StorageClient, ErrorModule)
 	log.Println("Gateway module setup correctly")
 	UseCaseModule := modules.SetupUseCase(GatewayModule)
 	log.Println("UseCase module setup correctly")
 	DelegateModule := modules.SetupDelegate(UseCaseModule)
 	log.Println("Delegate module setup correctly")
-	HandlerModule = modules.SetupHandler(DelegateModule)
+	HandlerModule = modules.SetupHandler(DelegateModule, ErrorModule)
 	log.Println("Handler module setup correctly")
-	return
+	return HandlerModule
 }

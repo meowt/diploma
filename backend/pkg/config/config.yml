@@ -43,7 +43,7 @@ postgres:
       ADD COLUMN IF NOT EXISTS firstname varchar(50),
       ADD COLUMN IF NOT EXISTS lastname varchar(50),
       ADD COLUMN IF NOT EXISTS email varchar(100) UNIQUE NOT NULL,
-      ADD COLUMN IF NOT EXISTS password varchar(100) NOT NULL"
+      ADD COLUMN IF NOT EXISTS password_hash varchar(100) NOT NULL"
     createThemeTable:
       "CREATE TABLE IF NOT EXISTS public.themes ();
       ALTER TABLE public.themes 

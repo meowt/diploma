@@ -1,8 +1,17 @@
 package modules
 
 import (
+	"Diploma/pkg/auth"
+	authDelegate "Diploma/pkg/auth/delegate"
+	authGateway "Diploma/pkg/auth/gateway"
+	authHttp "Diploma/pkg/auth/handler"
+	authUsecase "Diploma/pkg/auth/usecase"
+
+	"Diploma/pkg/errorPkg"
+
 	"Diploma/pkg/theme"
 	themeHttp "Diploma/pkg/theme/handler"
+
 	"Diploma/pkg/user"
 	userDelegate "Diploma/pkg/user/delegate"
 	userGateway "Diploma/pkg/user/gateway"
@@ -17,14 +26,29 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// ErrorModule section
+type ErrorModule struct {
+	ErrCreator   errorPkg.ErrCreator
+	ErrProcessor errorPkg.ErrProcessor
+}
+
+func SetupError() ErrorModule {
+	return ErrorModule{
+		ErrCreator:   errorPkg.SetupErrCreator(),
+		ErrProcessor: errorPkg.SetupErrProcessor(),
+	}
+}
+
 // GatewayModule section
 type GatewayModule struct {
+	AuthGateway  auth.Gateway
 	UserGateway  user.Gateway
 	ThemeGateway theme.Gateway
 }
 
-func SetupGateway(DatabaseClient *sqlx.DB, StorageClient *s3.S3) GatewayModule {
+func SetupGateway(DatabaseClient *sqlx.DB, StorageClient *s3.S3, errModule ErrorModule) GatewayModule {
 	return GatewayModule{
+		AuthGateway:  authGateway.SetupAuthGateway(DatabaseClient, errModule.ErrCreator),
 		UserGateway:  userGateway.SetupUserGateway(DatabaseClient),
 		ThemeGateway: themeGateway.SetupThemeGateway(DatabaseClient, StorageClient),
 	}
@@ -32,38 +56,44 @@ func SetupGateway(DatabaseClient *sqlx.DB, StorageClient *s3.S3) GatewayModule {
 
 // UseCaseModule section
 type UseCaseModule struct {
+	AuthUseCase  auth.UseCase
 	UserUseCase  user.UseCase
 	ThemeUseCase theme.UseCase
 }
 
 func SetupUseCase(gatewayModule GatewayModule) UseCaseModule {
 	return UseCaseModule{
-		UserUseCase:  userUsecase.SetupUserUseCase(gatewayModule),
-		ThemeUseCase: themeUsecase.SetupThemeUseCase(gatewayModule),
+		AuthUseCase:  authUsecase.SetupAuthUseCase(gatewayModule.AuthGateway),
+		UserUseCase:  userUsecase.SetupUserUseCase(gatewayModule.UserGateway),
+		ThemeUseCase: themeUsecase.SetupThemeUseCase(gatewayModule.ThemeGateway),
 	}
 }
 
 // DelegateModule section
 type DelegateModule struct {
+	AuthDelegate  auth.Delegate
 	UserDelegate  user.Delegate
 	ThemeDelegate theme.Delegate
 }
 
 func SetupDelegate(usecaseModule UseCaseModule) DelegateModule {
 	return DelegateModule{
-		UserDelegate:  userDelegate.SetupUserDelegate(usecaseModule),
-		ThemeDelegate: themeDelegate.SetupThemeDelegate(usecaseModule),
+		AuthDelegate:  authDelegate.SetupAuthDelegate(usecaseModule.AuthUseCase),
+		UserDelegate:  userDelegate.SetupUserDelegate(usecaseModule.UserUseCase),
+		ThemeDelegate: themeDelegate.SetupThemeDelegate(usecaseModule.ThemeUseCase),
 	}
 }
 
 // HandlerModule section
 type HandlerModule struct {
+	AuthHandler  authHttp.Handler
 	UserHandler  userHttp.Handler
 	ThemeHandler themeHttp.Handler
 }
 
-func SetupHandler(delegate DelegateModule) HandlerModule {
+func SetupHandler(delegate DelegateModule, errModule ErrorModule) HandlerModule {
 	return HandlerModule{
+		AuthHandler:  authHttp.SetupAuthHandler(delegate.AuthDelegate, errModule.ErrProcessor),
 		UserHandler:  userHttp.SetupUserHandler(delegate.UserDelegate),
 		ThemeHandler: themeHttp.SetupThemeHandler(delegate.ThemeDelegate),
 	}
