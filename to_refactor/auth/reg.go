@@ -1,15 +1,17 @@
 package auth
 
 import (
-	"Diploma/pkg/database"
-	error2 "Diploma/pkg/error"
-	"Diploma/pkg/handler"
 	"fmt"
-	"github.com/gorilla/sessions"
 	"html/template"
 	"io"
 	"net/http"
 	"os"
+
+	"Diploma/pkg/database"
+	error2 "Diploma/pkg/errorPkg"
+	"Diploma/pkg/handler"
+
+	"github.com/gorilla/sessions"
 )
 
 func Reg(w http.ResponseWriter, r *http.Request) {

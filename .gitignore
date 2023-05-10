@@ -1,3 +1,4 @@
 /backend/logs/
 /backend/pkg/config/config.yml
 /backend/web/
+/to_refactor/

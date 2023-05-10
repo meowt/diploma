@@ -1,17 +1,19 @@
 package handler
 
 import (
-	"Diploma/pkg/database"
-	error2 "Diploma/pkg/error"
-	"Diploma/pkg/to refactor/auth"
-	"Diploma/server"
 	"fmt"
-	"github.com/gorilla/mux"
 	"html/template"
 	"net/http"
+
+	"Diploma/pkg/database"
+	error2 "Diploma/pkg/errorPkg"
+	"Diploma/pkg/to_refactor/auth"
+	"Diploma/server"
+
+	"github.com/gorilla/mux"
 )
 
-func UserPageFollows(w http.ResponseWriter, r *http.Request) {
+func ThemePage(w http.ResponseWriter, r *http.Request) {
 	//Session start
 	session, e := server.store.Get(r, "session-name")
 	error2.errorProc(w, e, "Session start error")
@@ -27,17 +29,15 @@ func UserPageFollows(w http.ResponseWriter, r *http.Request) {
 	//Parsing url
 	vars := mux.Vars(r)
 
-	//Getting info about current page
-	var pageOwner database.User
-	e = pageOwner.GetPageData(vars["username"])
-	error2.errorProc(w, e, "Getting user page data error")
-
+	//Getting theme's data
+	var theme database.Theme
+	err := theme.GetByID(vars["id"])
+	error2.errorProc(w, err, "Getting theme's data error")
 	//Parsing templates
 	t, e := template.ParseFiles(
 		"./web/templates/scripts.html",
 		"./web/templates/trueHeader.html",
-		"./web/templates/userPage.html",
-		"./web/templates/userPageHeadFollows.html")
+		"./web/templates/themePage.html")
 	error2.errorProc(w, e, "Template parsing error")
 
 	//Executing templates with db data
@@ -50,10 +50,7 @@ func UserPageFollows(w http.ResponseWriter, r *http.Request) {
 		e = t.ExecuteTemplate(w, "trueHeader", headerData)
 		error2.errorProc(w, e, "Template executing error")
 
-		e = t.ExecuteTemplate(w, "userOwnPageHead", pageOwner)
-		error2.errorProc(w, e, "Template executing error")
-
-		e = t.ExecuteTemplate(w, "userPageFollows", pageOwner)
+		e = t.ExecuteTemplate(w, "themeOwnPage", theme)
 		error2.errorProc(w, e, "Template executing error")
 
 		e = t.ExecuteTemplate(w, "scripts", nil)
@@ -63,10 +60,7 @@ func UserPageFollows(w http.ResponseWriter, r *http.Request) {
 		e = t.ExecuteTemplate(w, "trueHeader", headerData)
 		error2.errorProc(w, e, "Template executing error")
 
-		e = t.ExecuteTemplate(w, "userPageHead", pageOwner)
-		error2.errorProc(w, e, "Template executing error")
-
-		e = t.ExecuteTemplate(w, "userPageFollows", pageOwner)
+		e = t.ExecuteTemplate(w, "themeOwnPage", theme)
 		error2.errorProc(w, e, "Template executing error")
 
 		e = t.ExecuteTemplate(w, "scripts", nil)

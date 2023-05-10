@@ -2,6 +2,7 @@ package server
 
 import (
 	"Diploma/app/modules"
+
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -20,6 +21,7 @@ func SetupGinRouter(handlers modules.HandlerModule) *gin.Engine {
 		gin.Recovery(),
 		gin.Logger(),
 	)
+	handlers.AuthHandler.InitAuthRoutes(router)
 	handlers.UserHandler.InitUserRoutes(router)
 	handlers.ThemeHandler.InitThemeRoutes(router)
 

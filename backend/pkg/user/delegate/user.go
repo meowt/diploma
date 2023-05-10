@@ -8,12 +8,12 @@ type UserDelegateImpl struct {
 	user.UseCase
 }
 
-type UserGatewayModule struct {
-	user.Gateway
+type UserDelegateModule struct {
+	user.Delegate
 }
 
-func SetupUserDelegate(usecase user.UseCase) UserGatewayModule {
-	return UserGatewayModule{
-		Gateway: &UserDelegateImpl{UseCase: usecase},
+func SetupUserDelegate(usecase user.UseCase) UserDelegateModule {
+	return UserDelegateModule{
+		Delegate: &UserDelegateImpl{UseCase: usecase},
 	}
 }

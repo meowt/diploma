@@ -1,10 +1,12 @@
 package auth
 
 import (
-	error2 "Diploma/pkg/error"
-	"Diploma/pkg/handler"
-	"github.com/gorilla/sessions"
 	"net/http"
+
+	error2 "Diploma/pkg/errorPkg"
+	"Diploma/pkg/handler"
+
+	"github.com/gorilla/sessions"
 )
 
 func Exit(w http.ResponseWriter, r *http.Request) {

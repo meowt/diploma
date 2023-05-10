@@ -1,18 +1,19 @@
 package handler
 
 import (
-	error2 "Diploma/pkg/error"
-	"Diploma/server"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+
+	error2 "Diploma/pkg/errorPkg"
+	"Diploma/server"
 )
 
-func avatar(w http.ResponseWriter, r *http.Request) {
+func background(w http.ResponseWriter, r *http.Request) {
 	_ = r.ParseMultipartForm(64)
-	file, _, e := r.FormFile("avatar")
+	file, _, e := r.FormFile("background")
 	error2.errorProc(w, e, "Forming file error")
 	defer file.Close()
 
@@ -38,7 +39,7 @@ func avatar(w http.ResponseWriter, r *http.Request) {
 	osFile.Close()
 
 	oldPath := strings.Replace(osFile.Name(), "\\", "/", -1)
-	newPath := path + "/avatar.jpg"
+	newPath := path + "/background.jpg"
 	e = os.Rename(oldPath, newPath)
 	if e != nil {
 		fmt.Println("Rename error", e.Error())

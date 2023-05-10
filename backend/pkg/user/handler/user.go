@@ -1,9 +1,11 @@
 package handler
 
 import (
-	"Diploma/pkg/user"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"Diploma/pkg/user"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {

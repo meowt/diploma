@@ -32,13 +32,6 @@ type ErrorModule struct {
 	ErrProcessor errorPkg.ErrProcessor
 }
 
-func SetupError() ErrorModule {
-	return ErrorModule{
-		ErrCreator:   errorPkg.SetupErrCreator(),
-		ErrProcessor: errorPkg.SetupErrProcessor(),
-	}
-}
-
 // GatewayModule section
 type GatewayModule struct {
 	AuthGateway  auth.Gateway
@@ -46,9 +39,9 @@ type GatewayModule struct {
 	ThemeGateway theme.Gateway
 }
 
-func SetupGateway(DatabaseClient *sqlx.DB, StorageClient *s3.S3, errModule ErrorModule) GatewayModule {
+func SetupGateway(DatabaseClient *sqlx.DB, StorageClient *s3.S3, errCreator errorPkg.ErrCreator) GatewayModule {
 	return GatewayModule{
-		AuthGateway:  authGateway.SetupAuthGateway(DatabaseClient, errModule.ErrCreator),
+		AuthGateway:  authGateway.SetupAuthGateway(DatabaseClient, errCreator),
 		UserGateway:  userGateway.SetupUserGateway(DatabaseClient),
 		ThemeGateway: themeGateway.SetupThemeGateway(DatabaseClient, StorageClient),
 	}
@@ -61,9 +54,9 @@ type UseCaseModule struct {
 	ThemeUseCase theme.UseCase
 }
 
-func SetupUseCase(gatewayModule GatewayModule) UseCaseModule {
+func SetupUseCase(gatewayModule GatewayModule, creator *errorPkg.ErrorCreator) UseCaseModule {
 	return UseCaseModule{
-		AuthUseCase:  authUsecase.SetupAuthUseCase(gatewayModule.AuthGateway),
+		AuthUseCase:  authUsecase.SetupAuthUseCase(gatewayModule.AuthGateway, gatewayModule.UserGateway, creator),
 		UserUseCase:  userUsecase.SetupUserUseCase(gatewayModule.UserGateway),
 		ThemeUseCase: themeUsecase.SetupThemeUseCase(gatewayModule.ThemeGateway),
 	}
@@ -91,9 +84,9 @@ type HandlerModule struct {
 	ThemeHandler themeHttp.Handler
 }
 
-func SetupHandler(delegate DelegateModule, errModule ErrorModule) HandlerModule {
+func SetupHandler(delegate DelegateModule, errorProcessor *errorPkg.ErrorProcessor) HandlerModule {
 	return HandlerModule{
-		AuthHandler:  authHttp.SetupAuthHandler(delegate.AuthDelegate, errModule.ErrProcessor),
+		AuthHandler:  authHttp.SetupAuthHandler(delegate.AuthDelegate, errorProcessor),
 		UserHandler:  userHttp.SetupUserHandler(delegate.UserDelegate),
 		ThemeHandler: themeHttp.SetupThemeHandler(delegate.ThemeDelegate),
 	}

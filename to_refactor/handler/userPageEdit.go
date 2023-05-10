@@ -1,12 +1,14 @@
 package handler
 
 import (
-	"Diploma/pkg/database"
-	error2 "Diploma/pkg/error"
-	"Diploma/pkg/to refactor/auth"
-	"Diploma/server"
-	"github.com/gorilla/mux"
 	"net/http"
+
+	"Diploma/pkg/database"
+	error2 "Diploma/pkg/errorPkg"
+	"Diploma/pkg/to_refactor/auth"
+	"Diploma/server"
+
+	"github.com/gorilla/mux"
 )
 
 func UserPageEdit(w http.ResponseWriter, r *http.Request) {

@@ -5,9 +5,9 @@ services:
     ports:
       - 9090:9090
     depends_on:
-      - db_auth
+      - db
 
-  db_auth:
+  db:
     container_name: db_auth
     image: postgres:latest
     ports:

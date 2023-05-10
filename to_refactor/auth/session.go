@@ -1,9 +1,11 @@
 package auth
 
 import (
-	error2 "Diploma/pkg/error"
-	"github.com/gorilla/sessions"
 	"net/http"
+
+	error2 "Diploma/pkg/errorPkg"
+
+	"github.com/gorilla/sessions"
 )
 
 func AuthCheck(s *sessions.Session) bool {

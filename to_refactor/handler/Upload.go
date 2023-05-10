@@ -1,9 +1,6 @@
 package handler
 
 import (
-	"Diploma/pkg/database"
-	error2 "Diploma/pkg/error"
-	"Diploma/server"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +8,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"Diploma/pkg/database"
+	error2 "Diploma/pkg/errorPkg"
+	"Diploma/server"
 )
 
 func Upload(w http.ResponseWriter, r *http.Request) {

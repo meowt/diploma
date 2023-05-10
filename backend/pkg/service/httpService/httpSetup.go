@@ -2,10 +2,11 @@ package httpService
 
 import (
 	"bytes"
-	"github.com/spf13/viper"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 func SetupClient() (client *http.Client) {

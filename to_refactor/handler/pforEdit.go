@@ -1,12 +1,13 @@
 package handler
 
 import (
-	error2 "Diploma/pkg/error"
-	"Diploma/pkg/to refactor/auth"
-	"Diploma/server"
 	"fmt"
 	"html/template"
 	"net/http"
+
+	error2 "Diploma/pkg/errorPkg"
+	"Diploma/pkg/to_refactor/auth"
+	"Diploma/server"
 )
 
 func profEdit(w http.ResponseWriter, r *http.Request) {

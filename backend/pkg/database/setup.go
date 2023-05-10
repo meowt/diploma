@@ -1,6 +1,8 @@
 package database
 
 import (
+	"errors"
+	"fmt"
 	"log"
 
 	"github.com/jmoiron/sqlx"
@@ -15,6 +17,7 @@ func Setup() (PostgresClient *sqlx.DB, err error) {
 	}
 
 	if err = PostgresClient.Ping(); err != nil {
+		err = errors.Join(fmt.Errorf("Error while pinging database: "), err)
 		return
 	}
 	log.Println("Successfully connected to Postgres")
@@ -28,7 +31,7 @@ func Setup() (PostgresClient *sqlx.DB, err error) {
 func Deploy(PostgresClient *sqlx.DB) (err error) {
 	for _, command := range viper.GetStringMapString("postgres.deployment") {
 		if _, err = PostgresClient.Exec(command); err != nil {
-			return
+			return errors.Join(fmt.Errorf("Error while deploying database: "), err)
 		}
 		log.Printf("Success: %s\n", command)
 	}

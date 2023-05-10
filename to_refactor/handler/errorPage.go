@@ -1,11 +1,12 @@
 package handler
 
 import (
-	error2 "Diploma/pkg/error"
-	"Diploma/server"
 	"fmt"
 	"html/template"
 	"net/http"
+
+	error2 "Diploma/pkg/errorPkg"
+	"Diploma/server"
 )
 
 func ErrorPage(w http.ResponseWriter, r *http.Request) {

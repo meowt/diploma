@@ -6,6 +6,7 @@ import (
 	"Diploma/app/modules"
 	"Diploma/pkg/config"
 	"Diploma/pkg/database"
+	"Diploma/pkg/errorPkg"
 	"Diploma/pkg/storage"
 	"Diploma/server"
 
@@ -17,6 +18,7 @@ func Run() {
 	defer log.Print("Shutting down\n")
 
 	//Logging initialisation
+	Logger := log.Default()
 	//if err := logging.LogInit(); err != nil {
 	//	log.Fatal("Logging init error\n" + err.Error())
 	//}
@@ -39,7 +41,7 @@ func Run() {
 	}
 
 	//SetupModules
-	handlers := SetupModules(DatabaseClient, StorageClient)
+	handlers := SetupModules(DatabaseClient, StorageClient, Logger)
 
 	//Start handling httpService requests
 	if err = server.Start(handlers); err != nil {
@@ -47,16 +49,15 @@ func Run() {
 	}
 }
 
-func SetupModules(DatabaseClient *sqlx.DB, StorageClient *s3.S3) (HandlerModule modules.HandlerModule) {
-	ErrorModule := modules.SetupError()
-	log.Println("Error module setup correctly")
-	GatewayModule := modules.SetupGateway(DatabaseClient, StorageClient, ErrorModule)
+func SetupModules(DatabaseClient *sqlx.DB, StorageClient *s3.S3, logger *log.Logger) (HandlerModule modules.HandlerModule) {
+	ErrorManager := errorPkg.InitErrorManager(logger)
+	GatewayModule := modules.SetupGateway(DatabaseClient, StorageClient, ErrorManager.ErrorCreator)
 	log.Println("Gateway module setup correctly")
-	UseCaseModule := modules.SetupUseCase(GatewayModule)
+	UseCaseModule := modules.SetupUseCase(GatewayModule, ErrorManager.ErrorCreator)
 	log.Println("UseCase module setup correctly")
 	DelegateModule := modules.SetupDelegate(UseCaseModule)
 	log.Println("Delegate module setup correctly")
-	HandlerModule = modules.SetupHandler(DelegateModule, ErrorModule)
+	HandlerModule = modules.SetupHandler(DelegateModule, ErrorManager.ErrorProcessor)
 	log.Println("Handler module setup correctly")
 	return HandlerModule
 }
