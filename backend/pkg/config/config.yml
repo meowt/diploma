@@ -1,5 +1,6 @@
 server:
-  address: "127.0.0.1:9090"
+  address: "localhost:9090"
+#  address: "backend:9090"
 
 http:
   cloud-api: "https://cloud-api.yandex.net/v1/disk/"
@@ -32,41 +33,60 @@ web:
 
 postgres:
   postgresDsn: "host=localhost port=5432 user=nymph password=nymph_pwd dbname=nymph_db sslmode=disable"
+#  postgresDsn: "host=database port=5432 user=nymph password=nymph_pwd dbname=nymph_db sslmode=disable"
   deployment:
-    createUserTable:
-      "CREATE TABLE IF NOT EXISTS public.users ();
+#    users table
+    - "CREATE TABLE IF NOT EXISTS public.users ();
       ALTER TABLE public.users 
       ADD COLUMN IF NOT EXISTS id serial PRIMARY KEY,
       ADD COLUMN IF NOT EXISTS created_at timestamp with time zone DEFAULT current_timestamp,      
-      ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone,
+      ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone DEFAULT current_timestamp,
       ADD COLUMN IF NOT EXISTS deleted_at timestamp with time zone,
       ADD COLUMN IF NOT EXISTS username varchar(50) NOT NULL UNIQUE,
       ADD COLUMN IF NOT EXISTS firstname varchar(50),
       ADD COLUMN IF NOT EXISTS lastname varchar(50),
+      ADD COLUMN IF NOT EXISTS followers integer,
       ADD COLUMN IF NOT EXISTS email varchar(100) UNIQUE NOT NULL,
       ADD COLUMN IF NOT EXISTS password_hash varchar(100) NOT NULL"
-    createThemeTable:
-      "CREATE TABLE IF NOT EXISTS public.themes ();
+#    user_media table
+    - "CREATE TABLE IF NOT EXISTS public.user_media ();
+      ALTER TABLE public.user_media 
+      ADD COLUMN IF NOT EXISTS user_id integer PRIMARY KEY REFERENCES users (id),
+      ADD COLUMN IF NOT EXISTS avatar text,
+      ADD COLUMN IF NOT EXISTS background text,
+      ADD COLUMN IF NOT EXISTS description text"
+#    follows table
+    - "CREATE TABLE IF NOT EXISTS public.follows ();
+      ALTER TABLE public.follows 
+      ADD COLUMN IF NOT EXISTS created_at timestamp with time zone DEFAULT current_timestamp,      
+      ADD COLUMN IF NOT EXISTS deleted_at timestamp with time zone,
+      ADD COLUMN IF NOT EXISTS follower_id integer REFERENCES users (id),
+      ADD COLUMN IF NOT EXISTS followed_id integer REFERENCES users (id)"
+#    themes table
+    - "CREATE TABLE IF NOT EXISTS public.themes ();
       ALTER TABLE public.themes 
       ADD COLUMN IF NOT EXISTS id serial PRIMARY KEY,
+      ADD COLUMN IF NOT EXISTS name varchar(100),
       ADD COLUMN IF NOT EXISTS created_at timestamp with time zone DEFAULT current_timestamp,      
-      ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone,
+      ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone DEFAULT current_timestamp,
       ADD COLUMN IF NOT EXISTS deleted_at timestamp with time zone,
       ADD COLUMN IF NOT EXISTS creator_id integer REFERENCES users (id),
+      ADD COLUMN IF NOT EXISTS downloads integer DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS likes integer DEFAULT 0,
       ADD COLUMN IF NOT EXISTS url varchar(200),
       ADD COLUMN IF NOT EXISTS description text"
-    createTokenTable:
-      "CREATE TABLE IF NOT EXISTS public.tokens ();
+#    tokens table
+    - "CREATE TABLE IF NOT EXISTS public.tokens ();
       ALTER TABLE public.tokens
       ADD COLUMN IF NOT EXISTS token varchar(64) NOT NULL PRIMARY KEY,
       ADD COLUMN IF NOT EXISTS expires_at timestamp with time zone DEFAULT current_timestamp + interval '7' day,
       ADD COLUMN IF NOT EXISTS user_id integer REFERENCES users (id)"
-    deleteOldTokensTrigger:
-      "CREATE OR REPLACE FUNCTION tokens_table_delete_old_rows() RETURNS trigger
+#    delete_old_tokens trigger
+    - "CREATE OR REPLACE FUNCTION tokens_table_delete_old_rows() RETURNS trigger
            LANGUAGE plpgsql
        AS $$
        BEGIN
-           DELETE FROM public.tokens WHERE expires_at < NOW() - INTERVAL '7 days';
+           DELETE FROM public.tokens WHERE expires_at < NOW();
            RETURN NEW;
        END;
        $$;

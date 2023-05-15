@@ -22,9 +22,9 @@ func SetupAuthDelegate(usecase auth.UseCase) AuthDelegateModule {
 	}
 }
 
-func (au *AuthDelegateImpl) SignUp(email, username, password string) (accessToken, refreshToken string, err error) {
-	user := models.UserHttp{Username: username, Email: email, Password: password}
-	hashManager := service.NewBCrypter()
+func (au *AuthDelegateImpl) SignUp(input *models.SignUpInput) (accessToken, refreshToken string, err error) {
+	user := models.UserHttp{Username: input.Username, Email: input.Email, Password: input.Password}
+	hashManager := service.NewHashManager()
 	user.Password, err = hashManager.HashPassword(user.Password)
 	if err != nil {
 		return
@@ -33,17 +33,14 @@ func (au *AuthDelegateImpl) SignUp(email, username, password string) (accessToke
 	return au.UseCase.SignUp(userUsecase)
 }
 
-func (au *AuthDelegateImpl) LogIn(email, password string) (accessToken, refreshToken string, err error) {
-	user := models.UserHttp{Email: email, Password: password}
-	if err != nil {
-		return
-	}
+func (au *AuthDelegateImpl) LogIn(input *models.LogInInput) (accessToken, refreshToken string, err error) {
+	user := &models.UserHttp{Email: input.Email, Password: input.Password}
 	userUsecase := user.ToUsecase()
 	return au.UseCase.LogIn(userUsecase)
 }
 
 func (au *AuthDelegateImpl) RefreshToken(username, oldRefreshToken string) (accessToken, refreshToken string, err error) {
-	return au.UseCase.RefreshToken(username, oldRefreshToken)
+	return au.UseCase.RefreshToken(&models.UserUsecase{Username: username}, oldRefreshToken)
 }
 
 func (au *AuthDelegateImpl) ParseToken(token string) (username string, err error) {

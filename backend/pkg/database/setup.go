@@ -29,7 +29,7 @@ func Setup() (PostgresClient *sqlx.DB, err error) {
 }
 
 func Deploy(PostgresClient *sqlx.DB) (err error) {
-	for _, command := range viper.GetStringMapString("postgres.deployment") {
+	for _, command := range viper.GetStringSlice("postgres.deployment") {
 		if _, err = PostgresClient.Exec(command); err != nil {
 			return errors.Join(fmt.Errorf("Error while deploying database: "), err)
 		}

@@ -26,12 +26,13 @@ func NewManager(signingKey string) *Manager {
 	return &Manager{signingKey: signingKey}
 }
 
-func (m *Manager) NewJWT(username string) (res string, err error) {
+func (m *Manager) NewJWT(user *models.UserUsecase) (res string, err error) {
 	claims := models.UserClaims{
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(viper.GetDuration("auth.access_token_ttl") * time.Second).Unix(),
 		},
-		Username: username,
+		UserId:   user.Id,
+		Username: user.Username,
 	}
 	ss := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	res, err = ss.SignedString([]byte(m.signingKey))

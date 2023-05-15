@@ -1,15 +1,15 @@
 package config
 
 import (
-	"github.com/spf13/viper"
 	"log"
+
+	"github.com/spf13/viper"
 )
 
 func Init() (err error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yml")
 	viper.AddConfigPath("./pkg/config")
-	viper.AddConfigPath("./pkg/database")
 	if err = viper.ReadInConfig(); err != nil {
 		return
 	}

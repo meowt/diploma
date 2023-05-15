@@ -11,7 +11,7 @@ type BCrypter struct {
 	rndm string
 }
 
-func NewBCrypter() *BCrypter {
+func NewHashManager() *BCrypter {
 	return new(BCrypter)
 }
 

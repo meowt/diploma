@@ -7,20 +7,27 @@ import (
 
 	"Diploma/pkg/auth"
 	"Diploma/pkg/errorPkg"
+	"Diploma/pkg/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
 
+// Methods' naming principle:
+// If method starts in lowercase - method doesn't process errors (only creates them)
+// If method starts in Uppercase - method and creates, and processes errors
+
 type Handler struct {
 	delegate     auth.Delegate
 	errProcessor *errorPkg.ErrorProcessor
+	errCreator   *errorPkg.ErrorCreator
 }
 
-func SetupAuthHandler(authDelegate auth.Delegate, processor *errorPkg.ErrorProcessor) Handler {
+func SetupAuthHandler(authDelegate auth.Delegate, processor *errorPkg.ErrorProcessor, creator *errorPkg.ErrorCreator) Handler {
 	return Handler{
 		delegate:     authDelegate,
 		errProcessor: processor,
+		errCreator:   creator,
 	}
 }
 
@@ -40,15 +47,9 @@ type authResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-type signUpInput struct {
-	Email    string `json:"email"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 func (h *Handler) SignUp(c *gin.Context) {
 	var (
-		input    = signUpInput{}
+		input    = models.SignUpInput{}
 		response = authResponse{}
 	)
 
@@ -58,26 +59,21 @@ func (h *Handler) SignUp(c *gin.Context) {
 		return
 	}
 
-	response.AccessToken, response.RefreshToken, err = h.delegate.SignUp(input.Email, input.Username, input.Password)
+	response.AccessToken, response.RefreshToken, err = h.delegate.SignUp(&input)
 	if err != nil {
 		h.errProcessor.ProcessError(c, err)
 		return
 	}
-	h.SetRefreshToken(response.RefreshToken, c)
+	h.setRefreshToken(response.RefreshToken, c)
 
 	log.Println(input.Email, input.Username, "signed up")
 	c.JSON(http.StatusOK, response)
 }
 
-type logInInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func (h *Handler) LogIn(c *gin.Context) {
 	var (
 		response authResponse
-		input    = logInInput{}
+		input    = models.LogInInput{}
 		err      error
 	)
 
@@ -86,13 +82,13 @@ func (h *Handler) LogIn(c *gin.Context) {
 		return
 	}
 
-	response.AccessToken, response.RefreshToken, err = h.delegate.LogIn(input.Email, input.Password)
+	response.AccessToken, response.RefreshToken, err = h.delegate.LogIn(&input)
 	if err != nil {
 		h.errProcessor.ProcessError(c, err)
 		return
 	}
 
-	h.SetRefreshToken(response.RefreshToken, c)
+	h.setRefreshToken(response.RefreshToken, c)
 
 	log.Println(input.Email, "logged in")
 	c.JSON(http.StatusOK, response)
@@ -104,25 +100,25 @@ func (h *Handler) Refresh(c *gin.Context) {
 		err      error
 	)
 
-	username, err := h.ParseIdentity(c)
+	identity, err := h.parseIdentity(c)
 	if err != nil {
 		h.errProcessor.ProcessError(c, err)
 		return
 	}
 
-	response.RefreshToken, err = h.GetRefreshTokenFromCookie(c)
+	response.RefreshToken, err = h.getRefreshTokenFromCookie(c)
 	if err != nil {
 		h.errProcessor.ProcessError(c, err)
 		return
 	}
 
-	accessToken, refreshToken, err := h.delegate.RefreshToken(username, response.RefreshToken)
+	accessToken, refreshToken, err := h.delegate.RefreshToken(identity.Username, response.RefreshToken)
 	if err != nil {
 		h.errProcessor.ProcessError(c, err)
 		return
 	}
 
-	log.Println(username, "refreshed his/her tokens")
+	log.Println(identity.Username, "refreshed his/her tokens")
 	c.JSON(http.StatusOK, authResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -131,13 +127,13 @@ func (h *Handler) Refresh(c *gin.Context) {
 
 // LogOut sets empty refresh token to user
 func (h *Handler) LogOut(c *gin.Context) {
-	h.SetRefreshToken("", c)
+	h.setRefreshToken("", c)
 	c.Status(http.StatusOK)
 }
 
 // Check method checks are equal user's refresh token and refresh token stored in DB
 func (h *Handler) Check(c *gin.Context) {
-	username, err := h.ParseIdentity(c)
+	username, err := h.parseIdentity(c)
 	if err != nil {
 		h.errProcessor.ProcessError(c, err)
 		return
@@ -147,20 +143,20 @@ func (h *Handler) Check(c *gin.Context) {
 	c.JSON(http.StatusOK, username)
 }
 
-func (h *Handler) ParseIdentity(c *gin.Context) (username string, err error) {
+func (h *Handler) parseIdentity(c *gin.Context) (userClaims *models.UserIdentity, err error) {
 	header := c.GetHeader("Authorization")
 	if header == "" {
-		//TODO: implement custom err
+		err = h.errCreator.NewErrEmptyAuthHeader()
 		return
 	}
 
 	_, bearerToken, ok := strings.Cut(header, " ")
 	if !ok {
-		//TODO: implement custom err
+		err = h.errCreator.NewErrStandardLibrary()
 		return
 	}
 
-	username, err = h.delegate.ParseToken(bearerToken)
+	userClaims.Username, err = h.delegate.ParseToken(bearerToken)
 	if err != nil {
 		//TODO: implement custom err
 		//log.Println("Parsing token error:", err.Error())
@@ -169,18 +165,17 @@ func (h *Handler) ParseIdentity(c *gin.Context) (username string, err error) {
 	return
 }
 
-// GetRefreshTokenFromCookie parses client's cookie with name "refresh_token" and returns result and error (if there is no such cookie)
-func (h *Handler) GetRefreshTokenFromCookie(c *gin.Context) (refreshToken string, err error) {
+// getRefreshTokenFromCookie parses client's cookie with name "refresh_token" and returns result and error (if there is no such cookie)
+func (h *Handler) getRefreshTokenFromCookie(c *gin.Context) (refreshToken string, err error) {
 	refreshToken, err = c.Cookie("refresh_token")
 	if err != nil {
-		// possible http.ErrNoCookie
-		h.errProcessor.ProcessError(c, err)
+		err = h.errCreator.NewErrEmptyCookie()
 		return
 	}
 	return
 }
 
-func (h *Handler) SetRefreshToken(refreshToken string, c *gin.Context) {
+func (h *Handler) setRefreshToken(refreshToken string, c *gin.Context) {
 	c.SetCookie(
 		"refresh_token",
 		refreshToken,

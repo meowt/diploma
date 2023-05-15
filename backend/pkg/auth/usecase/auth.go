@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"log"
+
 	"Diploma/pkg/auth"
 	"Diploma/pkg/errorPkg"
 	"Diploma/pkg/models"
@@ -35,7 +37,7 @@ func SetupAuthUseCase(authGateway auth.Gateway, userGateway user.Gateway, creato
 }
 
 func (au *AuthUseCaseImpl) SignUp(user *models.UserUsecase) (accessToken, refreshToken string, err error) {
-	accessToken, err = au.Manager.NewJWT(user.Username)
+	accessToken, err = au.Manager.NewJWT(user)
 	if err != nil {
 		return
 	}
@@ -43,48 +45,27 @@ func (au *AuthUseCaseImpl) SignUp(user *models.UserUsecase) (accessToken, refres
 	if err != nil {
 		return
 	}
-	err = au.authGateway.SignUp(user)
+	err = au.userGateway.CreateUser(user)
 	if err != nil {
 		return
 	}
-	err = au.authGateway.SaveRefreshToken(user.Username, refreshToken)
+	err = au.authGateway.SaveRefreshToken(user, refreshToken)
 	return
 }
 
 func (au *AuthUseCaseImpl) LogIn(user *models.UserUsecase) (accessToken, refreshToken string, err error) {
-	passwordHash, err := au.authGateway.LogIn(user)
+	notHashedPassword := user.Password
+	user, err = au.authGateway.LogIn(user)
 	if err != nil {
 		//
 		return
 	}
-	hashManager := service.NewBCrypter()
-	if hashManager.ComparePassword(user.Password, passwordHash) {
-		user, err = au.userGateway.GetUserByEmailOrUsername(user)
-		if err != nil {
-			return
-		}
-		accessToken, err = au.Manager.NewJWT(user.Username)
-		if err != nil {
-			//Access token generating error
-			return
-		}
-		refreshToken, err = au.Manager.NewRefreshToken()
-		if err != nil {
-			//Refresh token generating error
-			return
-		}
-		err = au.authGateway.SaveRefreshToken(user.Username, refreshToken)
-		return
+	hashManager := service.NewHashManager()
+	if !hashManager.ComparePassword(notHashedPassword, user.Password) {
+		log.Println(notHashedPassword, user.Password)
+		return accessToken, refreshToken, au.ErrorCreator.NewErrWrongPassword()
 	}
-	return accessToken, refreshToken, au.ErrorCreator.NewErrWrongPassword()
-}
-
-func (au *AuthUseCaseImpl) RefreshToken(username, oldRefreshToken string) (accessToken, refreshToken string, err error) {
-	err = au.authGateway.CheckRefreshToken(username, oldRefreshToken)
-	if err != nil {
-		return
-	}
-	accessToken, err = au.Manager.NewJWT(username)
+	accessToken, err = au.Manager.NewJWT(user)
 	if err != nil {
 		//Access token generating error
 		return
@@ -94,7 +75,30 @@ func (au *AuthUseCaseImpl) RefreshToken(username, oldRefreshToken string) (acces
 		//Refresh token generating error
 		return
 	}
-	err = au.authGateway.SaveRefreshToken(username, refreshToken)
+	err = au.authGateway.SaveRefreshToken(user, refreshToken)
+	return
+}
+
+func (au *AuthUseCaseImpl) RefreshToken(user *models.UserUsecase, oldRefreshToken string) (accessToken, refreshToken string, err error) {
+	user, err = au.userGateway.GetUserByEmailOrUsername(user)
+	if err != nil {
+		return
+	}
+	err = au.authGateway.CheckRefreshToken(user, oldRefreshToken)
+	if err != nil {
+		return
+	}
+	accessToken, err = au.Manager.NewJWT(user)
+	if err != nil {
+		//Access token generating error
+		return
+	}
+	refreshToken, err = au.Manager.NewRefreshToken()
+	if err != nil {
+		//Refresh token generating error
+		return
+	}
+	err = au.authGateway.SaveRefreshToken(user, refreshToken)
 	return
 }
 
@@ -105,12 +109,13 @@ func (au *AuthUseCaseImpl) ParseToken(token string) (claims *models.UserClaims, 
 			return []byte(key), nil
 		})
 	if err != nil {
+		err = au.ErrorCreator.NewErrParsingToken()
 		return
 	}
 
 	claims, ok := data.Claims.(*models.UserClaims)
 	if !ok {
-		//TODO: implement custom err
+		err = au.ErrorCreator.NewErrParsingToken()
 		return
 	}
 	return

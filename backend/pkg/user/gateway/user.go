@@ -36,3 +36,18 @@ func (u *UserGatewayImpl) GetUserByEmailOrUsername(useCaseUser *models.UserUseca
 	}
 	return dbUser.ToUsecase(), err
 }
+
+func (u *UserGatewayImpl) CreateUser(user *models.UserUsecase) (err error) {
+	query := fmt.Sprintf(
+		"INSERT INTO public.users (created_at, username, firstname, lastname, email, password_hash) VALUES (current_timestamp, '%v', '%v', '%v', '%v', '%v')",
+		user.Username, user.Firstname, user.Lastname, user.Email, user.Password)
+	_, err = u.DatabaseClient.Exec(query)
+	if err != nil {
+		//TODO: implement db duplicate error
+		//if errors.As(err, ) {
+		//	return
+		//}
+		return
+	}
+	return
+}
