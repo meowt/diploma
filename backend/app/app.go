@@ -57,7 +57,7 @@ func SetupModules(DatabaseClient *sqlx.DB, StorageClient *s3.S3, logger *log.Log
 	log.Println("UseCase module setup correctly")
 	DelegateModule := modules.SetupDelegate(UseCaseModule)
 	log.Println("Delegate module setup correctly")
-	HandlerModule = modules.SetupHandler(DelegateModule, ErrorManager.ErrorProcessor)
+	HandlerModule = modules.SetupHandler(DelegateModule, ErrorManager)
 	log.Println("Handler module setup correctly")
 	return HandlerModule
 }

@@ -2,14 +2,6 @@ server:
   address: "localhost:9090"
 #  address: "backend:9090"
 
-http:
-  cloud-api: "https://cloud-api.yandex.net/v1/disk/"
-  cloud-api-upload: "https://cloud-api.yandex.net/v1/disk/resources/upload?path=%themeId_Photo%"
-  header:
-    Content-Type: "application/json"
-    Accept: "*/*"
-    Authorization: "OAuth y0_AgAAAAAXKuN7AAjmwgAAAADXTygCenYKHvlQSs2muIaj3Nc_nA2cT1E"
-
 storage:
   bucket: "meowt-media-content-bucket"
   accessKey: "JEssrtZHNm627eY6tMgbz"
@@ -45,7 +37,7 @@ postgres:
       ADD COLUMN IF NOT EXISTS username varchar(50) NOT NULL UNIQUE,
       ADD COLUMN IF NOT EXISTS firstname varchar(50),
       ADD COLUMN IF NOT EXISTS lastname varchar(50),
-      ADD COLUMN IF NOT EXISTS followers integer,
+      ADD COLUMN IF NOT EXISTS followers integer DEFAULT 0,
       ADD COLUMN IF NOT EXISTS email varchar(100) UNIQUE NOT NULL,
       ADD COLUMN IF NOT EXISTS password_hash varchar(100) NOT NULL"
 #    user_media table
@@ -58,8 +50,6 @@ postgres:
 #    follows table
     - "CREATE TABLE IF NOT EXISTS public.follows ();
       ALTER TABLE public.follows 
-      ADD COLUMN IF NOT EXISTS created_at timestamp with time zone DEFAULT current_timestamp,      
-      ADD COLUMN IF NOT EXISTS deleted_at timestamp with time zone,
       ADD COLUMN IF NOT EXISTS follower_id integer REFERENCES users (id),
       ADD COLUMN IF NOT EXISTS followed_id integer REFERENCES users (id)"
 #    themes table
@@ -75,6 +65,11 @@ postgres:
       ADD COLUMN IF NOT EXISTS likes integer DEFAULT 0,
       ADD COLUMN IF NOT EXISTS url varchar(200),
       ADD COLUMN IF NOT EXISTS description text"
+#    likes table
+    - "CREATE TABLE IF NOT EXISTS public.likes ();
+        ALTER TABLE public.likes 
+        ADD COLUMN IF NOT EXISTS liker_id integer REFERENCES users (id),
+        ADD COLUMN IF NOT EXISTS liked_theme_id integer REFERENCES themes (id)"
 #    tokens table
     - "CREATE TABLE IF NOT EXISTS public.tokens ();
       ALTER TABLE public.tokens

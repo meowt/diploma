@@ -1,32 +1,36 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
+	"strconv"
 
-	"Diploma/pkg/service/httpService"
+	"Diploma/pkg/auth"
 	"Diploma/pkg/theme"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 type Handler struct {
-	delegate theme.Delegate
+	delegate     theme.Delegate
+	authDelegate auth.Delegate
 }
 
-func SetupThemeHandler(themeDelegate theme.Delegate) Handler {
+func SetupThemeHandler(themeDelegate theme.Delegate, authDelegate auth.Delegate) Handler {
 	return Handler{
-		delegate: themeDelegate,
+		delegate:     themeDelegate,
+		authDelegate: authDelegate,
 	}
 }
 
 func (h *Handler) InitThemeRoutes(router *gin.Engine) {
 	themeRouter := router.Group("/theme")
 	{
-		themeRouter.GET("/", h.GetInfo)
-		themeRouter.GET("/:themeId", h.GetThemeById)
-		themeRouter.GET("/getUploadPath", h.GetUploadPath)
+		themeRouter.POST("/upload", h.UploadTheme)
+		themeRouter.GET("/getThemeById/:themeId", h.GetThemeById)
+		themeRouter.GET("/getByUsername/:username", h.GetByUsername)
+		themeRouter.GET("/getByFollows", h.GetByFollows)
+		themeRouter.GET("/getLastThemesByUsername/:username", h.GetLastThemesByUsername)
+		themeRouter.GET("/getLastThemes", h.GetLastThemes)
 	}
 }
 
@@ -34,50 +38,43 @@ type Response struct {
 	Message string
 }
 
-func (h *Handler) GetInfo(c *gin.Context) {
-	client := httpService.SetupClient()
-	req, err := httpService.SetupRequestByUrl(viper.GetString("http.cloud-api"))
+func (h *Handler) UploadTheme(c *gin.Context) {
+	//TODO: implement endpoint
+	data, err := c.FormFile("File")
 	if err != nil {
-		//error handling
+		h.
 		return
 	}
-	response, err := client.Do(&req)
-	if err != nil {
-		//error handling
-		return
-	}
-	responseJson, err := httpService.ReadResponse(response)
-	if err != nil {
-		//error handling
-		return
-	}
-	fmt.Println(responseJson)
-	c.JSON(http.StatusOK, Response{Message: responseJson})
+
+	c.JSON(http.StatusOK, Response{Message: "something like theme should be here"})
 }
 
 func (h *Handler) GetThemeById(c *gin.Context) {
-	id := c.Param("themeId")
-	c.JSON(http.StatusOK, Response{Message: id})
+	//TODO: implement endpoint
+	idStr := c.Param("themeId")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return
+	}
+	c.JSON(http.StatusOK, Response{Message: strconv.Itoa(id)})
 }
 
-func (h *Handler) GetUploadPath(c *gin.Context) {
-	client := httpService.SetupClient()
-	req, err := httpService.SetupRequestByUrl(viper.GetString("http.cloud-api-upload"))
-	if err != nil {
-		//error handling
-		return
-	}
-	fmt.Println(req.Header)
-	response, err := client.Do(&req)
-	if err != nil {
-		//error handling
-		return
-	}
-	responseJson, err := httpService.ReadResponse(response)
-	if err != nil {
-		//error handling
-		return
-	}
-	fmt.Println(responseJson)
-	c.JSON(http.StatusOK, Response{Message: responseJson})
+func (h *Handler) GetByUsername(c *gin.Context) {
+	//TODO: implement endpoint
+	c.JSON(http.StatusOK, Response{Message: "something like theme should be here"})
+}
+
+func (h *Handler) GetByFollows(c *gin.Context) {
+	//TODO: implement endpoint
+	c.JSON(http.StatusOK, Response{Message: "something like theme should be here"})
+}
+
+func (h *Handler) GetLastThemesByUsername(c *gin.Context) {
+	//TODO: implement endpoint
+	c.JSON(http.StatusOK, Response{Message: "something like theme should be here"})
+}
+
+func (h *Handler) GetLastThemes(c *gin.Context) {
+	//TODO: implement endpoint
+	c.JSON(http.StatusOK, Response{Message: "something like theme should be here"})
 }

@@ -1,7 +1,9 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -19,11 +21,11 @@ type TokenManager interface {
 }
 
 type Manager struct {
-	signingKey string
+	SigningKey string
 }
 
 func NewManager(signingKey string) *Manager {
-	return &Manager{signingKey: signingKey}
+	return &Manager{SigningKey: signingKey}
 }
 
 func (m *Manager) NewJWT(user *models.UserUsecase) (res string, err error) {
@@ -31,26 +33,28 @@ func (m *Manager) NewJWT(user *models.UserUsecase) (res string, err error) {
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(viper.GetDuration("auth.access_token_ttl") * time.Second).Unix(),
 		},
-		UserId:   user.Id,
-		Username: user.Username,
+		UserIdentity: models.UserIdentity{
+			UserId:   user.Id,
+			Username: user.Username,
+		},
 	}
 	ss := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	res, err = ss.SignedString([]byte(m.signingKey))
+	res, err = ss.SignedString([]byte(m.SigningKey))
 	if err != nil {
-		//TODO: implement custom err "Access token generating error"
+		err = errors.New("error while signing jwt token")
 		return
 	}
+	log.Printf("Generated access token for %v: %v", user.Username, res)
 	return
 }
 
 func (m *Manager) Parse(accessToken string) (string, error) {
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (i interface{}, err error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			//TODO: implement custom errs
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(m.signingKey), nil
+		return []byte(m.SigningKey), nil
 	})
 	if err != nil {
 		return "", err
@@ -58,7 +62,7 @@ func (m *Manager) Parse(accessToken string) (string, error) {
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", fmt.Errorf("error get user claims from token")
+		return "", errors.New("error get user claims from token")
 	}
 
 	return claims["sub"].(string), nil

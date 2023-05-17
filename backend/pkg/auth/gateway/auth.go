@@ -33,7 +33,7 @@ func (au *AuthGatewayImpl) LogIn(user *models.UserUsecase) (gotUser *models.User
 		user.Email, user.Username)
 	err = au.DatabaseClient.QueryRowx(query).StructScan(&dbUser)
 	if err != nil {
-		log.Println(err)
+		log.Println("[ERROR] SQL query didn't execute:", query)
 		err = au.ErrCreator.New(err)
 		return
 	}
@@ -49,6 +49,7 @@ func (au *AuthGatewayImpl) SaveRefreshToken(user *models.UserUsecase, refreshTok
 		user.Id, refreshToken, user.Id)
 	_, err = au.DatabaseClient.Exec(query)
 	if err != nil {
+		log.Println("[ERROR] SQL query didn't execute:", query)
 		return au.ErrCreator.New(err)
 	}
 	log.Println("SQL query executed:", query)
@@ -59,7 +60,12 @@ func (au *AuthGatewayImpl) CheckRefreshToken(user *models.UserUsecase, oldRefres
 	query := fmt.Sprintf(
 		"SELECT * FROM public.tokens WHERE user_id = '%v' AND token = '%v'",
 		user.Id, oldRefreshToken)
-	res, err := au.DatabaseClient.Exec(query)
-	log.Println(res)
+	_, err = au.DatabaseClient.Exec(query)
+	if err != nil {
+		log.Println("[ERROR] SQL query didn't execute:", query)
+		err = au.ErrCreator.New(err)
+		return
+	}
+	log.Println("SQL query executed:", query)
 	return
 }

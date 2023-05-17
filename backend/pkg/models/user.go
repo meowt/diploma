@@ -1,72 +1,100 @@
 package models
 
 import (
-	"time"
-
 	"github.com/golang-jwt/jwt"
-	"github.com/lib/pq"
 )
+
+type UserUpdateInput struct {
+	UpdatingUserId uint   `json:"updating_user_id,omitempty"`
+	NewUsername    string `json:"new_username"`
+	Firstname      string `json:"firstname"`
+	Lastname       string `json:"lastname"`
+}
 
 type UserClaims struct {
 	jwt.StandardClaims
+	UserIdentity
+}
+
+type UserIdentity struct {
+	UserId   uint
 	Username string
 }
 
-type UserDB struct {
-	Id            int         `json:"id,omitempty"`
-	Created_At    pq.NullTime `json:"created_at"`
-	Updated_At    pq.NullTime `json:"updated_at"`
-	Deleted_At    pq.NullTime `json:"deleted_at"`
-	Username      string      `json:"username,omitempty"`
-	Firstname     string      `json:"firstname,omitempty"`
-	Lastname      string      `json:"lastname,omitempty"`
-	Email         string      `json:"email,omitempty"`
-	Password_Hash string      `json:"passwordHash,omitempty"`
+type UserHttp struct {
+	DefaultModel
+	Username  string `json:"username"`
+	Firstname string `json:"firstname,omitempty"`
+	Lastname  string `json:"lastname,omitempty"`
+	Email     string `json:"email"`
+	Password  string `json:"password,omitempty"`
+	Followers int    `json:"followers"`
 }
 
 type UserUsecase struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt time.Time
+	DefaultModel
 	Username  string
 	Firstname string
 	Lastname  string
 	Email     string
 	Password  string
+	Followers int
 }
 
-type UserHttp struct {
-	Username  string
-	Firstname string
-	Lastname  string
-	Email     string
-	Password  string
+type UserDB struct {
+	DBDefaultModel
+	Username      string
+	Firstname     string
+	Lastname      string
+	Email         string
+	Password_Hash string
+	Followers     int
+}
+
+func (user *UserUsecase) ToHttp() *UserHttp {
+	return &UserHttp{
+		DefaultModel: user.DefaultModel,
+		Username:     user.Username,
+		Firstname:    user.Firstname,
+		Lastname:     user.Lastname,
+		Email:        user.Email,
+		//Password:     user.Password,
+		Followers: user.Followers,
+	}
 }
 
 func (user *UserHttp) ToUsecase() *UserUsecase {
 	return &UserUsecase{
-		Email:    user.Email,
-		Password: user.Password,
-	}
-}
-
-func (user *UserUsecase) ToDB() *UserDB {
-	return &UserDB{
-		Username:      user.Username,
-		Firstname:     user.Firstname,
-		Lastname:      user.Lastname,
-		Email:         user.Email,
-		Password_Hash: user.Password,
+		DefaultModel: user.DefaultModel,
+		Username:     user.Username,
+		Firstname:    user.Firstname,
+		Lastname:     user.Lastname,
+		Email:        user.Email,
+		Password:     user.Password,
+		Followers:    user.Followers,
 	}
 }
 
 func (user *UserDB) ToUsecase() *UserUsecase {
 	return &UserUsecase{
-		CreatedAt: user.Created_At.Time,
-		UpdatedAt: user.Updated_At.Time,
-		Username:  user.Username,
-		Firstname: user.Firstname,
-		Lastname:  user.Lastname,
-		Email:     user.Email,
+		DefaultModel: user.ToDefaultModel(),
+		Username:     user.Username,
+		Firstname:    user.Firstname,
+		Lastname:     user.Lastname,
+		Email:        user.Email,
+		Password:     user.Password_Hash,
+		Followers:    user.Followers,
+	}
+}
+
+func (user *UserUsecase) ToDB() *UserDB {
+	return &UserDB{
+		DBDefaultModel: user.ToDBDefaultModel(),
+		Username:       user.Username,
+		Firstname:      user.Firstname,
+		Lastname:       user.Lastname,
+		Email:          user.Email,
+		Password_Hash:  user.Password,
+		Followers:      user.Followers,
 	}
 }

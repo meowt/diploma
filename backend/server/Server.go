@@ -25,7 +25,7 @@ func SetupGinRouter(handlers modules.HandlerModule) *gin.Engine {
 	handlers.AuthHandler.InitAuthRoutes(router)
 	handlers.UserHandler.InitUserRoutes(router)
 	handlers.ThemeHandler.InitThemeRoutes(router)
-
+	handlers.MediaHandler.InitMediaRoutes(router)
 	return router
 }
 

@@ -1,15 +1,19 @@
 package delegate
 
 import (
-	"errors"
+	"strings"
 
 	"Diploma/pkg/auth"
+	"Diploma/pkg/errorPkg"
 	"Diploma/pkg/models"
 	"Diploma/pkg/service"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AuthDelegateImpl struct {
 	auth.UseCase
+	errorPkg.ErrorCreator
 }
 
 type AuthDelegateModule struct {
@@ -43,15 +47,24 @@ func (au *AuthDelegateImpl) RefreshToken(username, oldRefreshToken string) (acce
 	return au.UseCase.RefreshToken(&models.UserUsecase{Username: username}, oldRefreshToken)
 }
 
-func (au *AuthDelegateImpl) ParseToken(token string) (username string, err error) {
-	claims, err := au.UseCase.ParseToken(token)
+func (au *AuthDelegateImpl) ParseIdentity(c *gin.Context) (userIdentity *models.UserIdentity, err error) {
+	header := c.GetHeader("Authorization")
+	if header == "" {
+		err = au.ErrorCreator.NewErrEmptyAuthHeader()
+		return
+	}
+
+	_, bearerToken, ok := strings.Cut(header, " ")
+	if !ok {
+		err = au.ErrorCreator.NewErrStandardLibrary()
+		return
+	}
+
+	userIdentity, err = au.UseCase.ParseToken(bearerToken)
 	if err != nil {
+		//TODO: implement custom err
+		//log.Println("Parsing token error:", err.Error())
 		return
 	}
-	if claims.Username == "" {
-		err = errors.New("Empty username wtf ")
-		return
-	}
-	username = claims.Username
 	return
 }

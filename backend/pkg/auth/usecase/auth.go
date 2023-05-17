@@ -37,15 +37,15 @@ func SetupAuthUseCase(authGateway auth.Gateway, userGateway user.Gateway, creato
 }
 
 func (au *AuthUseCaseImpl) SignUp(user *models.UserUsecase) (accessToken, refreshToken string, err error) {
+	err = au.userGateway.CreateUser(user)
+	if err != nil {
+		return
+	}
 	accessToken, err = au.Manager.NewJWT(user)
 	if err != nil {
 		return
 	}
 	refreshToken, err = au.Manager.NewRefreshToken()
-	if err != nil {
-		return
-	}
-	err = au.userGateway.CreateUser(user)
 	if err != nil {
 		return
 	}
@@ -102,7 +102,7 @@ func (au *AuthUseCaseImpl) RefreshToken(user *models.UserUsecase, oldRefreshToke
 	return
 }
 
-func (au *AuthUseCaseImpl) ParseToken(token string) (claims *models.UserClaims, err error) {
+func (au *AuthUseCaseImpl) ParseToken(token string) (identity *models.UserIdentity, err error) {
 	key := viper.GetString("auth.signing_key")
 	data, err := jwt.ParseWithClaims(token, &models.UserClaims{},
 		func(token *jwt.Token) (interface{}, error) {
@@ -118,5 +118,5 @@ func (au *AuthUseCaseImpl) ParseToken(token string) (claims *models.UserClaims, 
 		err = au.ErrorCreator.NewErrParsingToken()
 		return
 	}
-	return
+	return &claims.UserIdentity, err
 }

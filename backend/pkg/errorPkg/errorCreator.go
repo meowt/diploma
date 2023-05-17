@@ -28,10 +28,12 @@ func SetupErrorCreator(Logger *log.Logger) *ErrorCreator {
 }
 
 var (
+	ErrAccessDenied      = errors.New("access denied")
 	ErrWrongPassword     = errors.New("wrong password")
 	ErrParsingToken      = errors.New("error while parsing token")
 	ErrEmptyAuthHeader   = errors.New("empty authentication header")
 	ErrStandardLibrary   = errors.New("internal server error related to standard golang library")
+	ErrSQLNoRows         = errors.New("nothing was found in database")
 	ErrEmptyCookie       = errors.New("client's refresh_token cookie is empty")
 	ErrBusyEmail         = errors.New("this email is already used by another user")
 	ErrInformation       = fmt.Errorf("filename: %v, line: %v", filename, line)
@@ -50,7 +52,11 @@ type ErrCreator interface {
 
 // New method is just a stub
 func (e *ErrorCreator) New(oldErr error) (newErr error) {
-	return errors.Join(oldErr)
+	return oldErr
+}
+
+func (e *ErrorCreator) NewErrSQLNoRows() (err error) {
+	return ErrSQLNoRows
 }
 
 func (e *ErrorCreator) NewErrWrongPassword() (err error) {
@@ -74,4 +80,8 @@ func (e *ErrorCreator) NewErrEmptyCookie() (err error) {
 }
 func (e *ErrorCreator) NewErrBusyEmail() (err error) {
 	return ErrBusyEmail
+}
+
+func (e *ErrorCreator) NewErrAccessDenied() (err error) {
+	return ErrAccessDenied
 }

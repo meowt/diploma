@@ -3,7 +3,6 @@ package errorPkg
 import (
 	"log"
 	"net/http"
-	"runtime"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,27 +19,35 @@ func SetupErrorProcessor(Logger *log.Logger) *ErrorProcessor {
 	return &ErrorProcessor{Logger}
 }
 
+type ErrJson struct {
+	ErrorString string `json:"Error"`
+}
+
 func (processor *ErrorProcessor) ProcessError(c *gin.Context, errToProcess error) {
-	_, filename, line, _ := runtime.Caller(1)
 	log.Printf("[error]: %v, \nfilename: %v, line: %v\n", errToProcess, filename, line)
+	errJson := ErrJson{ErrorString: errToProcess.Error()}
 
 	switch errToProcess {
 	//http.StatusBadRequest (code 400) section
 	case ErrEmptyCookie:
-		c.AbortWithStatusJSON(http.StatusBadRequest, errToProcess)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errJson)
 	case ErrEmptyAuthHeader:
-		c.AbortWithStatusJSON(http.StatusBadRequest, errToProcess)
+		c.AbortWithStatusJSON(http.StatusBadRequest, errJson)
 
 	//http.StatusUnauthorized (code 401) section
 	case ErrParsingToken:
-		c.AbortWithStatusJSON(http.StatusUnauthorized, errToProcess)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errJson)
 	case ErrWrongPassword:
-		c.AbortWithStatusJSON(http.StatusUnauthorized, errToProcess)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errJson)
+
+	//http.StatusNotFound (code 404) section
+	case ErrSQLNoRows:
+		c.AbortWithStatusJSON(http.StatusNotFound, errJson)
 
 	//http.StatusInternalServerError (code 500) section
 	case ErrStandardLibrary:
-		c.AbortWithStatusJSON(http.StatusInternalServerError, errToProcess)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errJson)
 	default:
-		c.AbortWithStatusJSON(http.StatusInternalServerError, errToProcess)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errJson)
 	}
 }
